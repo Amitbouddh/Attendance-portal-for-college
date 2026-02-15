@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 👇 BACKGROUND COLOR CHANGE KARO */
+body {
+  background-color: #f9fafb; /* Light Gray */
+  color: #111827; /* Dark Text */
+}
