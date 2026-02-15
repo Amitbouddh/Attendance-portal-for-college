@@ -132,7 +132,7 @@ const Attendance = () => {
                    <HelpCircle className="w-8 h-8 text-blue-500 mx-auto mb-2" />
                    <h3 className="font-bold text-blue-800 mb-1">Forgot Password?</h3>
                    <p className="text-xs text-blue-600 leading-relaxed">
-                     For security reasons, automatic password reset is disabled. Please contact your <b>Class Coordinator</b> or <b>Admin Dept</b> to reset your password manually.
+                     For security reasons, automatic password reset is disabled. Please contact your <b>Amitbouddh</b> or <b>Admin Dept</b> to reset your password manually.
                    </p>
                 </div>
                 <button onClick={() => setMode('login')} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all">
