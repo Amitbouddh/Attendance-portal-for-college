@@ -46,7 +46,7 @@ const Attendance = () => {
   const [showPass, setShowPass] = useState(false);
 
   // 👇 PASTE NEW URL HERE
-  const API_URL = "https://script.google.com/macros/s/AKfycby_396i5fTwkxELcSW5DuaCiS1cu3Y3YuRHYTy4Xz94AwCmk5kRz3n0lhGtsdM9V-D3eg/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbzHOnA034N89f8voH427sRDD8wW2t_r54xYAkJvUxUUJfSAq-GaqxJFLKA0HTnxZ2rXbw/exec"; 
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
