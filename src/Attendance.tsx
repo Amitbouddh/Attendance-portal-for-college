@@ -22,7 +22,7 @@ interface StudentData {
 }
 
 // --- HELPER COMPONENT: CIRCULAR PROGRESS CARD ---
-const CircularCard = ({ title, value, marks, colorClass, bgClass, strokeColor }: any) => {
+const CircularCard = ({ title, value, marks, colorClass, strokeColor }: any) => {
   const size = 120;
   const strokeWidth = 8;
   const radius = (size - strokeWidth) / 2;
