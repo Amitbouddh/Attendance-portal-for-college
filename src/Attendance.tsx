@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Loader2, Lock, User, LogOut, LayoutDashboard, GraduationCap, BookOpen, KeyRound, Eye, EyeOff, Mail, Send } from 'lucide-react';
+import { Loader2, Lock, User, LogOut, LayoutDashboard, GraduationCap, BookOpen, KeyRound, Eye, EyeOff, Mail, ArrowRight, CheckCircle } from 'lucide-react';
 
-// --- TYPES & CIRCULAR CARD (Same as before - No Change) ---
+// --- TYPES & CIRCULAR CARD (Same as always) ---
 interface Marks { assg: string; int1: string; int2: string; }
 interface Subject { name: string; attendance: string; marks: Marks; }
 interface StudentData { success: boolean; rollNo: string; name: string; subjects: Subject[]; }
@@ -31,11 +31,14 @@ const CircularCard = ({ title, value, marks, colorClass, strokeColor }: any) => 
 // --- MAIN COMPONENT ---
 const Attendance = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login');
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot_request' | 'forgot_verify'>('login');
+  
   const [roll, setRoll] = useState('');
   const [pass, setPass] = useState('');
-  const [email, setEmail] = useState(''); // New State for Email
+  const [email, setEmail] = useState('');
+  const [otp, setOtp] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -43,7 +46,7 @@ const Attendance = () => {
   const [showPass, setShowPass] = useState(false);
 
   // 👇 PASTE NEW URL HERE
-  const API_URL = "https://script.google.com/macros/s/AKfycbzRwFHlzXB0Hs7YOBnqLJXLt2vPmat6oMNFhZI8ResDo2_2L2AlqTROcmfk8RqbWUPokw/exec"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbyw1wplDdvA_nlE0lAv-CJGjBODqKpU26j_FoRBIOGMY9V1GEjGkqHKAzMtsycC21Hp1A/exec"; 
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,34 +54,44 @@ const Attendance = () => {
     setSuccessMsg('');
     setLoading(true);
 
-    if (mode === 'register' && pass !== confirmPass) {
+    if ((mode === 'register' || mode === 'forgot_verify') && pass !== confirmPass) {
       setError("Passwords do not match!");
       setLoading(false);
       return;
     }
 
     try {
-      // Build URL based on mode
-      let url = `${API_URL}?action=${mode}&roll=${roll}`;
-      if (mode === 'login') url += `&pass=${pass}`;
-      if (mode === 'register') url += `&pass=${pass}&email=${email}`; // Send Email too
+      let url = `${API_URL}?roll=${roll}`;
       
+      if (mode === 'login') url += `&action=login&pass=${pass}`;
+      else if (mode === 'register') url += `&action=register&pass=${pass}&email=${email}`;
+      else if (mode === 'forgot_request') url += `&action=send_otp`;
+      else if (mode === 'forgot_verify') url += `&action=reset_pass&pass=${pass}&otp=${otp}`;
+
       const response = await fetch(url);
       const data = await response.json();
 
       if (data.success) {
+        setSuccessMsg(data.message);
+        
         if (mode === 'login') {
           setStudent(data);
           setIsLoggedIn(true);
-        } else {
-          setSuccessMsg(data.message);
-          if(mode === 'register') setMode('login'); // Go to login after register
+        } 
+        else if (mode === 'register') {
+          setTimeout(() => setMode('login'), 2000);
+        }
+        else if (mode === 'forgot_request') {
+          setMode('forgot_verify'); // Go to OTP screen
+        }
+        else if (mode === 'forgot_verify') {
+          setTimeout(() => setMode('login'), 2000);
         }
       } else {
         setError(data.error || "Something went wrong");
       }
     } catch (err) {
-      setError("Network Error. Check internet connection.");
+      setError("Network Error.");
     } finally {
       setLoading(false);
     }
@@ -105,11 +118,11 @@ const Attendance = () => {
           
           <h2 className="text-2xl font-bold text-gray-800 mb-1 text-center">Student Portal</h2>
           <p className="text-gray-400 text-sm mb-6 text-center">
-            {mode === 'forgot' ? 'Recover Password' : 'Manage your academic profile'}
+            {mode.includes('forgot') ? 'Reset Password' : 'Academic Dashboard'}
           </p>
 
-          {/* TABS */}
-          {mode !== 'forgot' && (
+          {/* TABS (Only for Login/Register) */}
+          {!mode.includes('forgot') && (
             <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
               <button onClick={() => {setMode('login'); setError(''); setSuccessMsg('')}} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'login' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Login</button>
               <button onClick={() => {setMode('register'); setError(''); setSuccessMsg('')}} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'register' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Register</button>
@@ -118,30 +131,41 @@ const Attendance = () => {
 
           <form className="space-y-4" onSubmit={handleAuth}>
             
-            {/* ROLL NUMBER (Always visible) */}
+            {/* ROLL NUMBER (Always needed except for OTP screen if we kept roll in state) */}
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase ml-2">Roll Number</label>
               <div className="relative">
                 <User className="absolute left-4 top-3.5 h-5 w-5 text-gray-300" />
-                <input type="number" value={roll} onChange={(e)=>setRoll(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="e.g. 141730" />
+                <input type="number" value={roll} onChange={(e)=>setRoll(e.target.value)} required disabled={mode === 'forgot_verify'} className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300 disabled:opacity-60" placeholder="e.g. 141730" />
               </div>
             </div>
 
-            {/* EMAIL (Only for Register) */}
+            {/* EMAIL (Register Only) */}
             {mode === 'register' && (
               <div className="space-y-1 animate-in slide-in-from-top-2 fade-in">
                 <label className="text-xs font-bold text-gray-400 uppercase ml-2">Email Address</label>
                 <div className="relative">
                   <Mail className="absolute left-4 top-3.5 h-5 w-5 text-gray-300" />
-                  <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="student@college.edu" />
+                  <input type="email" value={email} onChange={(e)=>setEmail(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="you@example.com" />
                 </div>
               </div>
             )}
 
-            {/* PASSWORD (Hidden in Forgot Mode) */}
-            {mode !== 'forgot' && (
+            {/* OTP INPUT (Only for Forgot Verify) */}
+            {mode === 'forgot_verify' && (
+              <div className="space-y-1 animate-in slide-in-from-top-2 fade-in">
+                <label className="text-xs font-bold text-gray-400 uppercase ml-2">Enter OTP</label>
+                <div className="relative">
+                  <CheckCircle className="absolute left-4 top-3.5 h-5 w-5 text-gray-300" />
+                  <input type="number" value={otp} onChange={(e)=>setOtp(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300 tracking-widest" placeholder="123456" />
+                </div>
+              </div>
+            )}
+
+            {/* PASSWORD (Login, Register, Forgot Verify) */}
+            {mode !== 'forgot_request' && (
               <div className="space-y-1">
-                <label className="text-xs font-bold text-gray-400 uppercase ml-2">Password</label>
+                <label className="text-xs font-bold text-gray-400 uppercase ml-2">{mode === 'login' ? 'Password' : 'New Password'}</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-300" />
                   <input type={showPass ? "text" : "password"} value={pass} onChange={(e)=>setPass(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-12 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="••••••" />
@@ -152,13 +176,13 @@ const Attendance = () => {
               </div>
             )}
 
-            {/* CONFIRM PASSWORD (Only for Register) */}
-            {mode === 'register' && (
+            {/* CONFIRM PASSWORD (Register, Forgot Verify) */}
+            {(mode === 'register' || mode === 'forgot_verify') && (
               <div className="space-y-1 animate-in slide-in-from-top-2 fade-in">
                 <label className="text-xs font-bold text-gray-400 uppercase ml-2">Confirm Password</label>
                 <div className="relative">
                   <KeyRound className="absolute left-4 top-3.5 h-5 w-5 text-gray-300" />
-                  <input type="password" value={confirmPass} onChange={(e)=>setConfirmPass(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="Re-enter password" />
+                  <input type="password" value={confirmPass} onChange={(e)=>setConfirmPass(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="Confirm password" />
                 </div>
               </div>
             )}
@@ -166,28 +190,29 @@ const Attendance = () => {
             {/* FORGOT LINK */}
             {mode === 'login' && (
               <div className="flex justify-end">
-                <button type="button" onClick={() => {setMode('forgot'); setError(''); setSuccessMsg('')}} className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                <button type="button" onClick={() => {setMode('forgot_request'); setError(''); setSuccessMsg('')}} className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
                   Forgot Password?
                 </button>
               </div>
             )}
 
-            {/* ERROR / SUCCESS MESSAGES */}
+            {/* MESSAGES */}
             {error && <div className="text-rose-500 text-sm font-medium text-center bg-rose-50 py-2.5 rounded-xl border border-rose-100">{error}</div>}
             {successMsg && <div className="text-emerald-600 text-sm font-medium text-center bg-emerald-50 py-2.5 rounded-xl border border-emerald-100">{successMsg}</div>}
             
-            {/* ACTION BUTTON */}
+            {/* MAIN BUTTON */}
             <button type="submit" disabled={loading} className="w-full bg-blue-600 text-white font-bold py-4 rounded-xl shadow-lg shadow-blue-600/20 hover:bg-blue-700 transition-all active:scale-[0.98] mt-2 disabled:opacity-70 flex justify-center items-center gap-2">
               {loading ? <Loader2 className="animate-spin w-5 h-5" /> : 
                 (mode === 'login' ? "Access Dashboard" : 
-                 mode === 'register' ? "Create Account" : 
-                 <>Send Password <Send className="w-4 h-4" /></>
+                 mode === 'register' ? "Create Account" :
+                 mode === 'forgot_request' ? "Send OTP" : "Reset Password"
                 )
               }
+              {!loading && mode === 'forgot_request' && <ArrowRight className="w-4 h-4" />}
             </button>
 
-            {/* BACK TO LOGIN (Only for Forgot) */}
-            {mode === 'forgot' && (
+            {/* BACK BUTTON */}
+            {mode.includes('forgot') && (
                <button type="button" onClick={() => setMode('login')} className="w-full text-gray-400 font-bold text-sm py-2 hover:text-gray-600 transition-colors">
                  Back to Login
                </button>
@@ -199,13 +224,14 @@ const Attendance = () => {
     );
   }
 
-  // --- DASHBOARD (NO CHANGES) ---
+  // --- DASHBOARD (NO CHANGE) ---
   const totalAtt = student?.subjects.reduce((acc, curr) => acc + parseFloat(curr.attendance || '0'), 0) || 0;
   const avgAtt = (totalAtt / (student?.subjects.length || 1)).toFixed(1) + '%';
   const overallColors = getColors(avgAtt);
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] pb-10 font-sans">
+      {/* Same Dashboard UI as before */}
       <nav className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center gap-2"><div className="bg-blue-600 p-2 rounded-lg"><LayoutDashboard className="text-white w-5 h-5"/></div><span className="font-bold text-gray-800 text-lg">EduPortal</span></div>
         <button onClick={() => setIsLoggedIn(false)} className="bg-gray-100 hover:bg-red-50 hover:text-red-500 p-2.5 rounded-xl text-gray-500 transition-colors"><LogOut className="w-5 h-5" /></button>
