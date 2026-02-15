@@ -50,7 +50,7 @@ const Attendance = () => {
   const [student, setStudent] = useState<StudentData | null>(null);
 
   // 👇 UPDATE URL HERE
-  const API_URL = "YOUR_NEW_DEPLOYED_URL_HERE"; 
+  const API_URL = "https://script.google.com/macros/s/AKfycbxfDLCsI0keIqkKgIk2jSWnIahZCaOQ87qc9YrCWBJgn2_9_tKcw_HsdsJsOkQZgUCSHQ/exec"; 
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
