@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Loader2, Lock, User, LogOut, LayoutDashboard, GraduationCap, BookOpen, KeyRound } from 'lucide-react';
+import { Loader2, Lock, User, LogOut, LayoutDashboard, GraduationCap, BookOpen, KeyRound, Eye, EyeOff, HelpCircle } from 'lucide-react';
 
-// ... (Types wahi rahenge jo pehle the) ...
+// --- TYPES ---
 interface Marks { assg: string; int1: string; int2: string; }
 interface Subject { name: string; attendance: string; marks: Marks; }
 interface StudentData { success: boolean; rollNo: string; name: string; subjects: Subject[]; }
 
-// ... (CircularCard Component wahi rahega) ...
+// --- CIRCULAR CARD COMPONENT (No Change) ---
 const CircularCard = ({ title, value, marks, colorClass, strokeColor }: any) => {
   const size = 120;
   const strokeWidth = 8;
@@ -38,9 +38,10 @@ const CircularCard = ({ title, value, marks, colorClass, strokeColor }: any) => 
   );
 };
 
+// --- MAIN ATTENDANCE COMPONENT ---
 const Attendance = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [mode, setMode] = useState<'login' | 'register'>('login'); // New State for Tabs
+  const [mode, setMode] = useState<'login' | 'register' | 'forgot'>('login'); // Added 'forgot' mode
   const [roll, setRoll] = useState('');
   const [pass, setPass] = useState('');
   const [confirmPass, setConfirmPass] = useState('');
@@ -48,8 +49,11 @@ const Attendance = () => {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [student, setStudent] = useState<StudentData | null>(null);
+  
+  // 👀 New State for See Password
+  const [showPass, setShowPass] = useState(false);
 
-  // 👇 UPDATE URL HERE
+  // 👇 YOUR URL (No change needed in URL)
   const API_URL = "https://script.google.com/macros/s/AKfycbxfDLCsI0keIqkKgIk2jSWnIahZCaOQ87qc9YrCWBJgn2_9_tKcw_HsdsJsOkQZgUCSHQ/exec"; 
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -58,7 +62,6 @@ const Attendance = () => {
     setSuccessMsg('');
     setLoading(true);
 
-    // Validation for Register
     if (mode === 'register' && pass !== confirmPass) {
       setError("Passwords do not match!");
       setLoading(false);
@@ -76,7 +79,7 @@ const Attendance = () => {
           setIsLoggedIn(true);
         } else {
           setSuccessMsg(data.message);
-          setMode('login'); // Switch to login after success
+          setMode('login');
           setPass('');
           setConfirmPass('');
         }
@@ -97,7 +100,7 @@ const Attendance = () => {
     return { text: 'text-rose-600', stroke: 'text-rose-500', bg: 'bg-rose-50' };
   };
 
-  // --- AUTH SCREEN (LOGIN / REGISTER) ---
+  // --- UI: LOGIN / REGISTER / FORGOT ---
   if (!isLoggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] p-6 relative overflow-hidden">
@@ -110,24 +113,35 @@ const Attendance = () => {
           </div>
           
           <h2 className="text-2xl font-bold text-gray-800 mb-1 text-center">Student Portal</h2>
-          <p className="text-gray-400 text-sm mb-6 text-center">Manage your academic profile</p>
+          <p className="text-gray-400 text-sm mb-6 text-center">
+            {mode === 'forgot' ? 'Recover Account' : 'Manage your academic profile'}
+          </p>
 
-          {/* TABS */}
-          <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
-            <button 
-              onClick={() => {setMode('login'); setError(''); setSuccessMsg('')}} 
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'login' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              Login
-            </button>
-            <button 
-              onClick={() => {setMode('register'); setError(''); setSuccessMsg('')}} 
-              className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'register' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}
-            >
-              Register
-            </button>
-          </div>
+          {/* TABS (Hidden in Forgot Mode) */}
+          {mode !== 'forgot' && (
+            <div className="flex bg-gray-100 p-1 rounded-xl mb-6">
+              <button onClick={() => {setMode('login'); setError(''); setSuccessMsg('')}} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'login' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Login</button>
+              <button onClick={() => {setMode('register'); setError(''); setSuccessMsg('')}} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${mode === 'register' ? 'bg-white text-gray-800 shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>Register</button>
+            </div>
+          )}
 
+          {/* FORGOT PASSWORD SCREEN */}
+          {mode === 'forgot' ? (
+             <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
+                   <HelpCircle className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                   <h3 className="font-bold text-blue-800 mb-1">Forgot Password?</h3>
+                   <p className="text-xs text-blue-600 leading-relaxed">
+                     For security reasons, automatic password reset is disabled. Please contact your <b>Class Coordinator</b> or <b>Admin Dept</b> to reset your password manually.
+                   </p>
+                </div>
+                <button onClick={() => setMode('login')} className="w-full bg-gray-100 text-gray-600 font-bold py-3 rounded-xl hover:bg-gray-200 transition-all">
+                  Back to Login
+                </button>
+             </div>
+          ) : (
+            
+          /* LOGIN / REGISTER FORM */
           <form className="space-y-4" onSubmit={handleAuth}>
             <div className="space-y-1">
               <label className="text-xs font-bold text-gray-400 uppercase ml-2">Roll Number</label>
@@ -141,7 +155,26 @@ const Attendance = () => {
               <label className="text-xs font-bold text-gray-400 uppercase ml-2">{mode === 'register' ? 'Set Password' : 'Password'}</label>
               <div className="relative">
                 <Lock className="absolute left-4 top-3.5 h-5 w-5 text-gray-300" />
-                <input type="password" value={pass} onChange={(e)=>setPass(e.target.value)} required className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-4 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" placeholder="••••••" />
+                
+                {/* 👇 PASSWORD INPUT WITH EYE TOGGLE */}
+                <input 
+                  type={showPass ? "text" : "password"} 
+                  value={pass} 
+                  onChange={(e)=>setPass(e.target.value)} 
+                  required 
+                  className="w-full bg-gray-50 border border-gray-100 rounded-xl pl-12 pr-12 py-3 text-gray-800 font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all placeholder:text-gray-300" 
+                  placeholder="••••••" 
+                />
+                
+                {/* EYE ICON BUTTON */}
+                <button 
+                  type="button"
+                  onClick={() => setShowPass(!showPass)}
+                  className="absolute right-4 top-3.5 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors"
+                >
+                  {showPass ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+
               </div>
             </div>
 
@@ -155,6 +188,15 @@ const Attendance = () => {
               </div>
             )}
 
+            {/* FORGOT PASSWORD LINK */}
+            {mode === 'login' && (
+              <div className="flex justify-end">
+                <button type="button" onClick={() => setMode('forgot')} className="text-xs font-bold text-blue-500 hover:text-blue-700 transition-colors">
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
             {error && <div className="text-rose-500 text-sm font-medium text-center bg-rose-50 py-2.5 rounded-xl border border-rose-100">{error}</div>}
             {successMsg && <div className="text-emerald-600 text-sm font-medium text-center bg-emerald-50 py-2.5 rounded-xl border border-emerald-100">{successMsg}</div>}
             
@@ -162,18 +204,21 @@ const Attendance = () => {
               {loading ? <Loader2 className="animate-spin w-5 h-5" /> : (mode === 'login' ? "Access Dashboard" : "Create Account")}
             </button>
           </form>
+          )}
+
         </div>
       </div>
     );
   }
 
-  // --- DASHBOARD (SAME AS BEFORE) ---
+  // --- DASHBOARD (NO CHANGES HERE) ---
   const totalAtt = student?.subjects.reduce((acc, curr) => acc + parseFloat(curr.attendance || '0'), 0) || 0;
   const avgAtt = (totalAtt / (student?.subjects.length || 1)).toFixed(1) + '%';
   const overallColors = getColors(avgAtt);
 
   return (
     <div className="min-h-screen bg-[#f8f9fc] pb-10 font-sans">
+      {/* Navbar aur baaki dashboard same rahega... */}
       <nav className="bg-white/80 backdrop-blur-md px-6 py-4 flex justify-between items-center sticky top-0 z-50 border-b border-gray-100">
         <div className="flex items-center gap-2">
            <div className="bg-blue-600 p-2 rounded-lg"><LayoutDashboard className="text-white w-5 h-5"/></div>
